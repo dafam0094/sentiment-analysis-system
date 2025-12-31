@@ -1,0 +1,71 @@
+# Django
+*.log
+*.pot
+*.pyc
+__pycache__/
+db.sqlite3
+migrations/
+!sentiment_app/migrations/__init__.py
+
+# Virtual Environment
+venv/
+env/
+ENV/
+venv311/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Media files (user uploaded content)
+media/
+
+# Static files (collected)
+staticfiles/
+
+# ML Models (if you want to exclude large files)
+# sentiment_app/ml_models/
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/

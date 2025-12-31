@@ -1,0 +1,31 @@
+# Create requirements.txt
+cat > requirements.txt << 'EOF'
+Django==4.2.0
+pandas==2.0.0
+numpy==1.24.0
+scikit-learn==1.2.0
+tensorflow==2.12.0
+nltk==3.8.1
+textblob==0.17.1
+imbalanced-learn==0.10.1
+xgboost==1.7.0
+lightgbm==4.0.0
+plotly==5.14.0
+matplotlib==3.7.0
+seaborn==0.12.0
+joblib==1.2.0
+scipy==1.10.0
+openpyxl==3.1.2
+django-crispy-forms==2.0
+celery==5.2.7
+redis==4.5.4
+django-cors-headers==3.14.0
+python-dotenv==1.0.0
+jupyter==1.0.0
+notebook==6.5.2
+djangorestframework==3.14.0
+drf-yasg==1.21.4
+EOF
+
+
+# pip install -r requirements.txt

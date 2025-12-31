@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard - Sentiment Analysis</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 20px;
+        }
+        .container {
+            max-width: 1400px;
+        }
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+            margin-bottom: 15px;
+        }
+        .stat-total { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .stat-positive { background: linear-gradient(135deg, #06D6A0 0%, #1B9AAA 100%); }
+        .stat-neutral { background: linear-gradient(135deg, #FFD166 0%, #FF9E00 100%); }
+        .stat-negative { background: linear-gradient(135deg, #FF6B6B 0%, #EE5A24 100%); }
+        .sentiment-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        .positive { background-color: #d4edda; color: #155724; }
+        .negative { background-color: #f8d7da; color: #721c24; }
+        .neutral { background-color: #fff3cd; color: #856404; }
+        .nav-link.active {
+            background-color: #0d6efd !important;
+            color: white !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark rounded mb-4">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="/">
+                    <i class="fas fa-chart-bar"></i> Sentiment Dashboard
+                </a>
+                <div class="navbar-nav">
+                    <a class="nav-link" href="/">Home</a>
+                    <a class="nav-link" href="/analyze/">Single Analysis</a>
+                    <a class="nav-link" href="/bulk/">Bulk Analysis</a>
+                    <a class="nav-link active" href="/dashboard/">Dashboard</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card stat-card stat-total">
+                    <h3>{{ total_analyses }}</h3>
+                    <h5>Total Analyses</h5>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card stat-positive">
+                    <h3>{{ chart_data.counts.2|default:0 }}</h3>
+                    <h5>Positive</h5>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card stat-neutral">
+                    <h3>{{ chart_data.counts.1|default:0 }}</h3>
+                    <h5>Neutral</h5>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card stat-negative">
+                    <h3>{{ chart_data.counts.0|default:0 }}</h3>
+                    <h5>Negative</h5>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">Sentiment Distribution</h4>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="sentimentChart" height="150"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h4 class="mb-0">Quick Actions</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <a href="/analyze/" class="btn btn-primary btn-lg">
+                                <i class="fas fa-search"></i> New Analysis
+                            </a>
+                            <a href="/bulk/" class="btn btn-success btn-lg">
+                                <i class="fas fa-file-upload"></i> Bulk Upload
+                            </a>
+                            <button class="btn btn-warning btn-lg" onclick="location.reload()">
+                                <i class="fas fa-sync-alt"></i> Refresh Dashboard
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0">Recent Analyses</h4>
+                    </div>
+                    <div class="card-body">
+                        {% if recent_analyses %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Text Preview</th>
+                                        <th>Sentiment</th>
+                                        <th>Confidence</th>
+                                        <th>Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for analysis in recent_analyses %}
+                                    <tr>
+                                        <td>{{ forloop.counter }}</td>
+                                        <td>{{ analysis.text|truncatechars:50 }}</td>
+                                        <td>
+                                            <span class="sentiment-badge {{ analysis.sentiment }}">
+                                                {{ analysis.sentiment|title }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="progress" style="height: 20px;">
+                                                <div class="progress-bar 
+                                                    {% if analysis.sentiment == 'positive' %}bg-success
+                                                    {% elif analysis.sentiment == 'negative' %}bg-danger
+                                                    {% else %}bg-warning{% endif %}" 
+                                                    role="progressbar" 
+                                                    style="width: {{ analysis.confience|default:50 }}%">
+                                                    {{ analysis.confidence|default:50|floatformat:0 }}%
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>{{ analysis.created_at|timesince }} ago</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                            <h5>No analyses yet</h5>
+                            <p>Start analyzing reviews to see data here</p>
+                            <a href="/analyze/" class="btn btn-primary">Start Analyzing</a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0">System Status</h4>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Database Connection
+                                <span class="badge bg-success rounded-pill">OK</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                ML Models
+                                <span class="badge bg-success rounded-pill">Loaded</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                API Status
+                                <span class="badge bg-success rounded-pill">Active</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                File Uploads
+                                <span class="badge bg-success rounded-pill">Ready</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0">Statistics</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <h6>Positive Rate</h6>
+                                <h3>
+                                    {% if total_analyses > 0 %}
+                                    {{ chart_data.counts.2|default:0|floatformat:0 }}%
+                                    {% else %}
+                                    0%
+                                    {% endif %}
+                                </h3>
+                            </div>
+                            <div class="col-6">
+                                <h6>Negative Rate</h6>
+                                <h3>
+                                    {% if total_analyses > 0 %}
+                                    {{ chart_data.counts.0|default:0|floatformat:0 }}%
+                                    {% else %}
+                                    0%
+                                    {% endif %}
+                                </h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Parse chart data from Django template
+        const chartData = JSON.parse('{{ chart_data|safe }}');
+        
+        // Sentiment Chart
+        const ctx = document.getElementById('sentimentChart').getContext('2d');
+        const sentimentChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: chartData.labels,
+                datasets: [{
+                    data: chartData.counts,
+                    backgroundColor: chartData.colors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                label += context.raw;
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Auto-refresh every 30 seconds
+        setTimeout(function() {
+            location.reload();
+        }, 30000);
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</body>
+</html>
+EOF

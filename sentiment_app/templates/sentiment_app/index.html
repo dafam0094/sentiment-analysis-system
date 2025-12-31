@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Home - Sentiment Analysis System{% endblock %}
+
+{% block content %}
+<div class="row mb-5">
+    <div class="col-12 text-center">
+        <h1 class="display-4 mb-3">Advanced Sentiment Analysis System</h1>
+        <p class="lead">Analyze customer reviews with state-of-the-art machine learning and deep learning models</p>
+    </div>
+</div>
+
+<div class="row mb-5">
+    <div class="col-md-4">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <i class="fas fa-search fa-3x text-primary mb-3"></i>
+                <h3>Single Review Analysis</h3>
+                <p>Analyze individual reviews with detailed sentiment breakdown and confidence scores</p>
+                <a href="{% url 'analyze_single' %}" class="btn btn-primary">Try Now</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <i class="fas fa-file-upload fa-3x text-success mb-3"></i>
+                <h3>Bulk Analysis</h3>
+                <p>Upload CSV/Excel files for batch sentiment analysis and comprehensive reports</p>
+                <a href="{% url 'analyze_bulk' %}" class="btn btn-success">Upload File</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <i class="fas fa-chart-bar fa-3x text-info mb-3"></i>
+                <h3>Dashboard</h3>
+                <p>Interactive dashboard with visualizations and insights from your analyses</p>
+                <a href="{% url 'dashboard' %}" class="btn btn-info">View Dashboard</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h4>System Statistics</h4>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-4">
+                        <h2 class="text-success">{{ stats.total_analyses }}</h2>
+                        <p>Total Analyses</p>
+                    </div>
+                    <div class="col-4">
+                        <h2 class="text-success">{{ stats.positive_count }}</h2>
+                        <p>Positive</p>
+                    </div>
+                    <div class="col-4">
+                        <h2 class="text-danger">{{ stats.negative_count }}</h2>
+                        <p>Negative</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h4>Try Sample Reviews</h4>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'analyze_single' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <select class="form-select" id="sampleSelect">
+                            <option>Select a sample review...</option>
+                            {% for review in sample_reviews %}
+                            <option>{{ review }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <textarea class="form-control" name="text" id="textInput" rows="3" 
+                                 placeholder="Or type your own review..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Analyze Sentiment</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4>Features</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <h5><i class="fas fa-balance-scale text-primary"></i> Balanced Models</h5>
+                        <p>Handles imbalanced datasets with advanced sampling techniques</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h5><i class="fas fa-robot text-success"></i> Multiple Models</h5>
+                        <p>Ensemble of Random Forest, XGBoost, and Deep Learning models</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h5><i class="fas fa-chart-pie text-info"></i> Visual Analytics</h5>
+                        <p>Interactive charts and detailed insights</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h5><i class="fas fa-code text-warning"></i> REST API</h5>
+                        <p>Easy integration with other applications</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('sampleSelect').addEventListener('change', function() {
+    document.getElementById('textInput').value = this.value;
+});
+</script>
+{% endblock %}

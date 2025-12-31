@@ -1,0 +1,180 @@
+<!-- sentiment_app/templates/sentiment_app/result_single.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Analysis Result</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 20px;
+        }
+        .container {
+            max-width: 1000px;
+        }
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .sentiment-badge {
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        .positive { background-color: #d4edda; color: #155724; }
+        .negative { background-color: #f8d7da; color: #721c24; }
+        .neutral { background-color: #fff3cd; color: #856404; }
+        .confidence-bar {
+            height: 10px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="mb-4">
+            <a href="/analyze/" class="btn btn-outline-primary">← New Analysis</a>
+            <a href="/" class="btn btn-outline-secondary ms-2">Home</a>
+        </nav>
+        
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h2 class="mb-0">Sentiment Analysis Result</h2>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h3>Analysis Summary</h3>
+                        <div class="mb-3">
+                            <span class="sentiment-badge {{ result.sentiment }}">
+                                {{ result.sentiment|upper }} SENTIMENT
+                            </span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Confidence Score:</strong></label>
+                            <div class="d-flex align-items-center">
+                                <div class="confidence-bar flex-grow-1 me-3">
+                                    <div class="confidence-fill" style="width: {{ result.confidence|floatformat:2 }}%"></div>
+                                </div>
+                                <span class="fw-bold">{{ result.confidence|floatformat:2 }}%</span>
+                            </div>
+                        </div>
+                        
+                        <p><strong>Model Used:</strong> {{ result.model }}</p>
+                        <p><strong>Word Count:</strong> {{ result.text_statistics.word_count }}</p>
+                        <p><strong>Character Count:</strong> {{ result.text_statistics.char_count }}</p>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h3>Probability Distribution</h3>
+                        <canvas id="sentimentChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0">Original Text</h3>
+            </div>
+            <div class="card-body">
+                <div style="max-height: 200px; overflow-y: auto;">
+                    <p>{{ original_text }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0">Detailed Probabilities</h3>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <div class="p-3 rounded" style="background-color: #f8d7da;">
+                            <h4>Negative</h4>
+                            <h2>{{ result.probabilities.negative|floatformat:2 }}%</h2>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 rounded" style="background-color: #fff3cd;">
+                            <h4>Neutral</h4>
+                            <h2>{{ result.probabilities.neutral|floatformat:2 }}%</h2>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 rounded" style="background-color: #d4edda;">
+                            <h4>Positive</h4>
+                            <h2>{{ result.probabilities.positive|floatformat:2 }}%</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center mt-4">
+            <a href="/analyze/" class="btn btn-primary btn-lg">
+                <i class="fas fa-redo"></i> Analyze Another Review
+            </a>
+        </div>
+    </div>
+    
+    <script>
+        // Chart.js implementation
+        const ctx = document.getElementById('sentimentChart').getContext('2d');
+        const chartData = {{ chart_data|safe }};
+        
+        const sentimentChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: chartData.labels,
+                datasets: [{
+                    label: 'Probability (%)',
+                    data: chartData.data,
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.7)',
+                        'rgba(255, 206, 86, 0.7)',
+                        'rgba(75, 192, 192, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Probability (%)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

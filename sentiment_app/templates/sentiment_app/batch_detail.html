@@ -1,0 +1,214 @@
+<!-- sentiment_app/templates/sentiment_app/batch_detail.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Batch Analysis Results</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 20px;
+        }
+        .container {
+            max-width: 1200px;
+        }
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .sentiment-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        .positive { background-color: #d4edda; color: #155724; }
+        .negative { background-color: #f8d7da; color: #721c24; }
+        .neutral { background-color: #fff3cd; color: #856404; }
+        .stat-card {
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+        .results-table {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="mb-4">
+            <a href="/bulk/" class="btn btn-outline-primary">← New Bulk Analysis</a>
+            <a href="/" class="btn btn-outline-secondary ms-2">Home</a>
+        </nav>
+        
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2 class="mb-0">Batch Analysis Results</h2>
+                    <span class="badge bg-light text-dark">ID: {{ batch.id }}</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h4>Analysis Information</h4>
+                        <table class="table">
+                            <tr>
+                                <th>File Name:</th>
+                                <td>{{ batch.file_name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Total Reviews:</th>
+                                <td>{{ batch.total_reviews }}</td>
+                            </tr>
+                            <tr>
+                                <th>Status:</th>
+                                <td>
+                                    <span class="badge bg-{% if batch.status == 'completed' %}success{% elif batch.status == 'processing' %}warning{% else %}secondary{% endif %}">
+                                        {{ batch.status|title }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Created:</th>
+                                <td>{{ batch.created_at }}</td>
+                            </tr>
+                            {% if batch.results_file %}
+                            <tr>
+                                <th>Results File:</th>
+                                <td>
+                                    <a href="{{ batch.results_file.url }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-download"></i> Download CSV
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h4>Sentiment Summary</h4>
+                        <canvas id="sentimentChart" height="200"></canvas>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="stat-card" style="background-color: #d4edda;">
+                            <h3>{{ batch.positive_count }}</h3>
+                            <h5>Positive Reviews</h5>
+                            <p>{{ batch.positive_count|floatformat:0 }}% of total</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card" style="background-color: #fff3cd;">
+                            <h3>{{ batch.neutral_count }}</h3>
+                            <h5>Neutral Reviews</h5>
+                            <p>{{ batch.neutral_count|floatformat:0 }}% of total</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card" style="background-color: #f8d7da;">
+                            <h3>{{ batch.negative_count }}</h3>
+                            <h5>Negative Reviews</h5>
+                            <p>{{ batch.negative_count|floatformat:0 }}% of total</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <h4>Average Confidence: {{ batch.average_confidence|floatformat:2 }}%</h4>
+                    <div class="progress" style="height: 20px;">
+                        <div class="progress-bar bg-success" role="progressbar" 
+                             style="width: {{ batch.average_confidence }}%">
+                            {{ batch.average_confidence|floatformat:1 }}%
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">Sample Results (First 20 Reviews)</h4>
+            </div>
+            <div class="card-body results-table">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Review Text</th>
+                            <th>Sentiment</th>
+                            <th>Confidence</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for result in results %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ result.text }}</td>
+                            <td>
+                                <span class="sentiment-badge {{ result.sentiment }}">
+                                    {{ result.sentiment|title }}
+                                </span>
+                            </td>
+                            <td>{{ result.confidence|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center">No results available</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="text-center mt-4">
+            <a href="/bulk/" class="btn btn-primary btn-lg">
+                <i class="fas fa-redo"></i> Analyze Another File
+            </a>
+        </div>
+    </div>
+    
+    <script>
+        // Sentiment chart
+        const ctx = document.getElementById('sentimentChart').getContext('2d');
+        const sentimentChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Positive', 'Neutral', 'Negative'],
+                datasets: [{
+                    data: [
+                        {{ batch.positive_count }},
+                        {{ batch.neutral_count }},
+                        {{ batch.negative_count }}
+                    ],
+                    backgroundColor: [
+                        '#28a745',
+                        '#ffc107',
+                        '#dc3545'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    }
+                }
+            }
+        });
+    </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</body>
+</html>
